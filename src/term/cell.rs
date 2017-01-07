@@ -30,7 +30,7 @@ bitflags! {
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Cell {
-    pub c: char,
+    pub c: Option<char>,
     pub fg: Color,
     pub bg: Color,
     pub flags: Flags,
@@ -39,7 +39,7 @@ pub struct Cell {
 impl Default for Cell {
     fn default() -> Cell {
         Cell::new(
-            ' ',
+            None,
             Color::Named(NamedColor::Foreground),
             Color::Named(NamedColor::Background)
         )
@@ -62,7 +62,7 @@ impl LineLength for grid::Row<Cell> {
         }
 
         for (index, cell) in self[..].iter().rev().enumerate() {
-            if cell.c != ' ' {
+            if cell.c != None {
                 length = Column(self.len() - index);
                 break;
             }
@@ -77,7 +77,7 @@ impl Cell {
         self.flags.contains(BOLD)
     }
 
-    pub fn new(c: char, fg: Color, bg: Color) -> Cell {
+    pub fn new(c: Option<char>, fg: Color, bg: Color) -> Cell {
         Cell {
             c: c.into(),
             bg: bg,
@@ -88,9 +88,10 @@ impl Cell {
 
     #[inline]
     pub fn is_empty(&self) -> bool {
-        self.c == ' ' &&
-            self.bg == Color::Named(NamedColor::Background) &&
-            !self.flags.contains(INVERSE)
+        (self.c == None ||
+            self.c == Some(' ')) &&
+                self.bg == Color::Named(NamedColor::Background) &&
+                !self.flags.contains(INVERSE)
     }
 
     #[inline]

@@ -279,12 +279,14 @@ impl SizeInfo {
 
 impl Term {
     pub fn new(size: SizeInfo) -> Term {
-        let template = Cell::default();
+        let empty = Cell::default();
+        let mut template = empty;
+        template.c = Some(' ');
 
         let num_cols = size.cols();
         let num_lines = size.lines();
 
-        let grid = Grid::new(num_lines, num_cols, &template);
+        let grid = Grid::new(num_lines, num_cols, &empty);
 
         let mut tabs = IndexRange::from(Column(0)..grid.num_cols())
             .map(|i| (*i as usize) % TAB_SPACES == 0)
@@ -307,7 +309,7 @@ impl Term {
             scroll_region: scroll_region,
             size_info: size,
             template_cell: template,
-            empty_cell: template,
+            empty_cell: empty,
         }
     }
 
@@ -354,7 +356,7 @@ impl Term {
                     None
                 } else {
                     for cell in &line[cols.start..line_end] {
-                        self.push(cell.c);
+                        self.push(cell.c.unwrap_or(' '))
                     }
 
                     Some(cols.start..line_end)
@@ -637,7 +639,7 @@ impl ansi::Handler for Term {
 
         let cell = &mut self.grid[&self.cursor];
         *cell = self.template_cell;
-        cell.c = c;
+        cell.c = Some(c);
         self.cursor.col += 1;
     }
 
@@ -742,6 +744,7 @@ impl ansi::Handler for Term {
                 if col == self.grid.num_cols() || self.tabs[*col as usize] {
                     break;
                 }
+                self.grid[self.cursor.line][col].reset(&self.template_cell);
                 col += 1;
             }
         }
@@ -769,6 +772,12 @@ impl ansi::Handler for Term {
     #[inline]
     fn linefeed(&mut self) {
         debug_println!("linefeed");
+        for cell in &mut self.grid[self.cursor.line] {
+            if cell.c.is_none() {
+                cell.bg = self.template_cell.bg;
+            }
+        }
+        
         if self.cursor.line + 1 == self.scroll_region.end {
             self.scroll_up(Line(1));
         } else {

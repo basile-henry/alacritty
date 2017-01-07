@@ -768,7 +768,7 @@ impl<'a> RenderApi<'a> {
                 line: line,
                 column: col + i,
                 inner: Cell {
-                    c: c,
+                    c: Some(c),
                     bg: *color,
                     fg: Color::Spec(Rgb { r: 0, g: 0, b: 0}),
                     flags: cell::Flags::empty(),
@@ -814,7 +814,7 @@ impl<'a> RenderApi<'a> {
             let glyph_key = GlyphKey {
                 font_key: font_key,
                 size: glyph_cache.font_size,
-                c: cell.c
+                c: cell.c.unwrap_or(' ')
             };
 
             // Add cell to batch if glyph available
